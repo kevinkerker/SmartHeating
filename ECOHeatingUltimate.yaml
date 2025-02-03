@@ -166,7 +166,7 @@ blueprint:
         window_contact:
           name: Window Contact (Optional)
           description:
-            Do not set temprature if Window Contact is in chosen state (see
+            Do not set temperature if Window Contact is in chosen state (see
             next input)
           default: {}
           selector:
