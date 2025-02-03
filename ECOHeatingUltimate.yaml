@@ -229,7 +229,7 @@ blueprint:
         time_morning:
           name: Time for the morning
           description:
-            A time input which defines the time from which on the Temparture
+            A time input which defines the time from which on the temperature
             Settings will be enabled when someone is at home.
           default: 06:00:00
           selector:
