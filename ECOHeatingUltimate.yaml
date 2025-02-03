@@ -1,5 +1,5 @@
 blueprint:
-  name: ECO Heating Ultimate v1.3
+  name: ECO Heating Ultimate v1.4
   description:
     "# ECO Heating Ultimate\nControl your Thermostat heating Schedule Entities
     by various Factors like Global Presence, Room Presence, etc. \n\nFor Details see
@@ -20,9 +20,9 @@ blueprint:
           domain:
             - climate
           multiple: false
-    section_day_chooser:
-      name: Automation days
-      icon: mdi:calendar-today-outline
+    section_automation_settings:
+      name: Automation triggers
+      icon: mdi:robot
       collapsed: true
       input:
         day_choose:
@@ -55,6 +55,25 @@ blueprint:
                   value: "7"
               multiple: true
               mode: list
+        interval_trigger:
+          name: Use interval trigger
+          description:
+            If this option is enabled the automation runs every X minutes.
+            The interval can be set below.
+          default: true
+          selector:
+            boolean: {}
+        interval_trigger_number:
+          name: Interval for automation trigger
+          description:
+            Set the interval in minutes in which the automation will be run.
+            (Only if the option above is set to true)
+            
+            Using the \"/\" means that it starts every x minutes if it is used without, it will start at this minute in the hour e.G. /5 means that it starts every 5 minutes and only 8 means that it starts every hour at the 8th minute.
+          default: "/5"
+          selector:
+            text:
+              suffix: "Minutes"
     section_presence:
       name: Presence
       icon: mdi:motion-sensor
@@ -85,6 +104,29 @@ blueprint:
               unit_of_measurement: seconds
               step: 1.0
               mode: slider
+    section_automation_blocker:
+      name: Automation Blocker
+      icon: mdi:robot
+      collapsed: true
+      input:
+        automation_blocker:
+          name: Automation Blocker (Optional)
+          description: Only run if this boolean is in desired state (see next input)
+          default:
+          selector:
+            entity:
+              domain:
+                - binary_sensor
+                - input_boolean
+              multiple: false
+        automation_blocker_boolean:
+          name: Automation Blocker Chooser (Optional)
+          description:
+            Desired state of automation blocker, choose on for on and off for
+            off
+          default: false
+          selector:
+            boolean: {}
     section_temperature:
       name: Temperature
       icon: mdi:thermometer
@@ -124,9 +166,9 @@ blueprint:
         window_contact:
           name: Window Contact (Optional)
           description:
-            Do not set temprature if Window Contact is in chosen state (see
+            Do not set temperature if Window Contact is in chosen state (see
             next input)
-          default:
+          default: {}
           selector:
             entity:
               domain:
@@ -141,29 +183,44 @@ blueprint:
           default: true
           selector:
             boolean: {}
-    section_automation_blocker:
-      name: Automation Blocker
-      icon: mdi:robot
-      collapsed: true
-      input:
-        automation_blocker:
-          name: Automation Blocker (Optional)
-          description: Only run if this boolean is in desired state (see next input)
-          default:
-          selector:
-            entity:
-              domain:
-                - binary_sensor
-                - input_boolean
-              multiple: false
-        automation_blocker_boolean:
-          name: Automation Blocker Chooser (Optional)
+        window_trigger:
+          name: Use window trigger
           description:
-            Desired state of automation blocker, choose on for on and off for
-            off
+            If this option is enabled the automation runs when the window state is changed.
           default: false
           selector:
             boolean: {}
+        window_action_chooser:
+          name: Window open action
+          description: Which action should be executed on window open state
+          default: "none"
+          selector:
+            select:
+              options:
+                - label: None
+                  value: "none"
+                - label: Off/5 degrees
+                  value: "off"
+                - label: Away temperature
+                  value: "away"
+                - label: Eco temperature
+                  value: "eco"
+                - label: Comfort temperature
+                  value: "comfort"
+              multiple: false
+              mode: dropdown
+        window_wait_time:
+          name: Window wait time (only opened)
+          description:
+            Time to wait before setting the selected temperature if the window is opened.
+          default: 120
+          selector:
+            number:
+              min: 0.0
+              max: 3600.0
+              unit_of_measurement: seconds
+              step: 1.0
+              mode: slider
     section_morning:
       name: "Profile: Morning"
       icon: mdi:coffee
@@ -372,14 +429,19 @@ mode: restart
 max_exceeded: silent
 variables:
   day_choose: !input day_choose
+  interval_trigger: !input interval_trigger
+  interval_trigger_number: !input interval_trigger_number
   climate_entity_var: !input climate_entity
   presence_detector: !input presence_detector
   away_temprature: !input away_temprature
   eco_temprature: !input eco_temprature
   automation_blocker: !input automation_blocker
   automation_blocker_boolean: !input automation_blocker_boolean
+  window_trigger: !input window_trigger
   window_contact: !input window_contact
   window_contact_boolean: !input window_contact_boolean
+  window_action_chooser: !input window_action_chooser
+  window_wait_time: !input window_wait_time
   morning_eco_temprature: !input morning_eco_temprature
   morning_comfort_temprature: !input morning_comfort_temprature
   morning_comfort_checker_boolean: !input morning_comfort_checker_boolean
@@ -392,26 +454,36 @@ variables:
   night_eco_temprature: !input night_eco_temprature
   night_comfort_temprature: !input night_comfort_temprature
   night_comfort_checker_boolean: !input night_comfort_checker_boolean
-trigger:
-  - platform: state
+triggers:
+  - trigger: state
     entity_id: !input presence_detector
     from: "off"
     to: "on"
-  - platform: state
+  - trigger: state
     entity_id: !input presence_detector
     from: "on"
     to: "off"
     for: !input no_presence_wait
-  - platform: time_pattern
-    minutes: /5
-  - platform: time
+  - trigger: time_pattern
+    enabled: !input interval_trigger
+    minutes: !input interval_trigger_number
+  - trigger: time
     at: !input time_morning
-  - platform: time
+  - trigger: time
     at: !input time_day
-  - platform: time
+  - trigger: time
     at: !input time_evening
-  - platform: time
+  - trigger: time
     at: !input time_night
+  - trigger: state
+    entity_id: !input window_contact
+    enabled: !input window_trigger
+    for: !input window_wait_time
+    to: "on"
+  - trigger: state
+    entity_id: !input window_contact
+    enabled: !input window_trigger
+    to: "off"
 condition:
   - condition: or
     conditions:
@@ -423,15 +495,138 @@ condition:
   - "{{ day_choose | contains(now().isoweekday() | string) }}"
 action:
   - choose:
-      - conditions:
+      - alias: Window action
+        conditions:
           - condition: or
             conditions:
               - "{{ window_contact != none and (window_contact_boolean and states[window_contact].state
                 == 'on') }}"
               - "{{ window_contact != none and (not window_contact_boolean and states[window_contact].state
                 == 'off') }}"
-        sequence: []
-      - conditions:
+        sequence:
+          - choose:
+              - alias: State off
+                conditions:
+                  - condition: template
+                    value_template: "{{ window_action_chooser == 'off' }}"
+                sequence:
+                  - service: climate.set_temperature
+                    data:
+                      temperature: 5
+                    target:
+                      entity_id: !input climate_entity
+              - alias: State away
+                conditions:
+                  - condition: template
+                    value_template: "{{ window_action_chooser == 'away' }}"
+                sequence:
+                  - service: climate.set_temperature
+                    data:
+                      temperature: !input away_temprature
+                    target:
+                      entity_id: !input climate_entity
+              - alias: State eco
+                conditions:
+                  - condition: template
+                    value_template: "{{ window_action_chooser == 'eco' }}"
+                sequence:
+                  - choose:
+                      - alias: State morning
+                        conditions:
+                          - condition: time
+                            after: !input time_morning
+                            before: !input time_day
+                        sequence:
+                          - service: climate.set_temperature
+                            data:
+                              temperature: !input morning_eco_temprature
+                            target:
+                              entity_id: !input climate_entity
+                      - alias: State day
+                        conditions:
+                          - condition: time
+                            after: !input time_day
+                            before: !input time_evening
+                        sequence:
+                          - service: climate.set_temperature
+                            data:
+                              temperature: !input day_eco_temprature
+                            target:
+                              entity_id: !input climate_entity
+                      - alias: State evening
+                        conditions:
+                          - condition: time
+                            after: !input time_evening
+                            before: !input time_night
+                        sequence:
+                          - service: climate.set_temperature
+                            data:
+                              temperature: !input day_eco_temprature
+                            target:
+                              entity_id: !input climate_entity
+                      - alias: State night
+                        conditions:
+                          - condition: time
+                            after: !input time_night
+                            before: !input time_morning
+                        sequence:
+                          - service: climate.set_temperature
+                            data:
+                              temperature: !input night_eco_temprature
+                            target:
+                              entity_id: !input climate_entity
+              - alias: State comfort
+                conditions:
+                  - condition: template
+                    value_template: "{{ window_action_chooser == 'comfort' }}"
+                sequence:
+                  - choose:
+                      - alias: State morning
+                        conditions:
+                          - condition: time
+                            after: !input time_morning
+                            before: !input time_day
+                        sequence:
+                          - service: climate.set_temperature
+                            data:
+                              temperature: !input morning_comfort_temprature
+                            target:
+                              entity_id: !input climate_entity
+                      - alias: State day
+                        conditions:
+                          - condition: time
+                            after: !input time_day
+                            before: !input time_evening
+                        sequence:
+                          - service: climate.set_temperature
+                            data:
+                              temperature: !input day_comfort_temprature
+                            target:
+                              entity_id: !input climate_entity
+                      - alias: State evening
+                        conditions:
+                          - condition: time
+                            after: !input time_evening
+                            before: !input time_night
+                        sequence:
+                          - service: climate.set_temperature
+                            data:
+                              temperature: !input day_comfort_temprature
+                            target:
+                              entity_id: !input climate_entity
+                      - alias: State night
+                        conditions:
+                          - condition: time
+                            after: !input time_night
+                            before: !input time_morning
+                        sequence:
+                          - service: climate.set_temperature
+                            data:
+                              temperature: !input night_comfort_temprature
+                            target:
+                              entity_id: !input climate_entity
+      - alias: Away action
+        conditions:
           - condition: state
             entity_id: !input presence_detector
             state: "off"
@@ -441,7 +636,8 @@ action:
               temperature: !input away_temprature
             target:
               entity_id: !input climate_entity
-      - conditions:
+      - alias: Morning action
+        conditions:
           - condition: time
             after: !input time_morning
             before: !input time_day
@@ -493,7 +689,8 @@ action:
                   temperature: !input morning_eco_temprature
                 target:
                   entity_id: !input climate_entity
-      - conditions:
+      - alias: Day action
+        conditions:
           - condition: time
             after: !input time_day
             before: !input time_evening
@@ -545,7 +742,8 @@ action:
                   temperature: !input day_eco_temprature
                 target:
                   entity_id: !input climate_entity
-      - conditions:
+      - alias: Evening action
+        conditions:
           - condition: time
             after: !input time_evening
             before: !input time_night
@@ -597,7 +795,8 @@ action:
                   temperature: !input evening_eco_temprature
                 target:
                   entity_id: !input climate_entity
-      - conditions:
+      - alias: Night action
+        conditions:
           - condition: time
             after: !input time_night
             before: !input time_morning
