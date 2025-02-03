@@ -168,7 +168,7 @@ blueprint:
           description:
             Do not set temprature if Window Contact is in chosen state (see
             next input)
-          default:
+          default: {}
           selector:
             entity:
               domain:
