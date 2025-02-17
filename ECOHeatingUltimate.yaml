@@ -1,5 +1,5 @@
 blueprint:
-  name: ECO Heating Ultimate v1.4
+  name: ECO Heating Ultimate v1.5
   description:
     "# ECO Heating Ultimate\nControl your Thermostat heating Schedule Entities
     by various Factors like Global Presence, Room Presence, etc. \n\nFor Details see
@@ -484,6 +484,21 @@ triggers:
     entity_id: !input window_contact
     enabled: !input window_trigger
     to: "off"
+  - trigger: template
+    alias: Presence Checker
+    value_template: presence_detector != none
+  - trigger: template
+    alias: Morning Comfort
+    value_template: morning_comfort_checker_boolean != none
+  - trigger: template
+    alias: Day Comfort
+    value_template: day_comfort_checker_boolean != none
+  - trigger: template
+    alias: Evening Comfort
+    value_template: evening_comfort_checker_boolean != none
+  - trigger: template
+    alias: Night Comfort
+    value_template: night_comfort_checker_boolean != none
 condition:
   - condition: or
     conditions:
