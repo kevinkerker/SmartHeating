@@ -412,6 +412,18 @@ trigger:
     at: !input time_evening
   - platform: time
     at: !input time_night
+  - trigger: template
+    alias: Morning Comfort
+    value_template: morning_comfort_checker_boolean != none
+  - trigger: template
+    alias: Day Comfort
+    value_template: day_comfort_checker_boolean != none
+  - trigger: template
+    alias: Evening Comfort
+    value_template: evening_comfort_checker_boolean != none
+  - trigger: template
+    alias: Night Comfort
+    value_template: night_comfort_checker_boolean != none
 condition:
   - condition: or
     conditions:
