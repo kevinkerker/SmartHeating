@@ -485,6 +485,9 @@ triggers:
     enabled: !input window_trigger
     to: "off"
   - trigger: template
+    alias: Presence Checker
+    value_template: presence_detector != none
+  - trigger: template
     alias: Morning Comfort
     value_template: morning_comfort_checker_boolean != none
   - trigger: template
