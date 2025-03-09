@@ -1,5 +1,5 @@
 blueprint:
-  name: Smart Heating v0.1
+  name: Smart Heating v0.2
   description:
     "# Smart Heating \n"
   domain: automation
@@ -14,7 +14,7 @@ blueprint:
         entity:
           domain:
             - climate
-          multiple: true
+          multiple: false
     section_automation_settings:
       name: Automation triggers
       icon: mdi:robot
