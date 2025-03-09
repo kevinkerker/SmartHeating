@@ -1,12 +1,7 @@
 blueprint:
-  name: ECO Heating Ultimate v1.4
+  name: Smart Heating v0.1
   description:
-    "# ECO Heating Ultimate\nControl your Thermostat heating Schedule Entities
-    by various Factors like Global Presence, Room Presence, etc. \n\nFor Details see
-    this Blog post:\nhttps://www.simon42.com/home-assistant-heizung-smart-machen-better-thermostat\n\nCapabilitys:\n
-    - Trigger on Presence Change (or any other Input Boolean)\n - Wait time for turning
-    off\n - Only Set Comfort Temprature if entity is in desired state (optional)\n
-    - 4 Slots with individual Temprature Settings for different times of day (optional)\n"
+    "# Smart Heating \n"
   domain: automation
   source_url: https://gist.github.com/TheRealSimon42/3b783cf34cf3185ada8dfa0ff67249c5
   input:
